@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build --base=/js_catch_asynchronous/",
+    "build": "vite build --base=/js_advanced_combined_hw/",
     "preview": "vite preview"
   },
   "devDependencies": {
