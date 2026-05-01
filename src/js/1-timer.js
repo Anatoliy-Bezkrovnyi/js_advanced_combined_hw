@@ -3,6 +3,10 @@
 import flatpickr from "flatpickr";
 import "flatpickr/dist/flatpickr.min.css";
 import { convertMs } from "./convert-miliseconds";
+// Описаний у документації
+import iziToast from "izitoast";
+// Додатковий імпорт стилів
+import "izitoast/dist/css/iziToast.min.css";
 
 const refs = {
   startBtn: document.querySelector("[data-start]"),
@@ -13,46 +17,70 @@ const refs = {
 };
 
 let userSelectedDate = null;
-let today = new Date();
-let interval = null;
+let timerId = null;
+
+// Спочатку кнопка вимкнена
+refs.startBtn.disabled = true;
 
 const options = {
   enableTime: true,
   time_24hr: true,
-  // defaultDate: new Date(),
+  defaultDate: new Date(),
   minuteIncrement: 1,
   onClose(selectedDates) {
-    if (selectedDates[0] < today) {
-      alert("Please choose a date in the future");
+    const selectedDate = selectedDates[0];
+    
+    // Перевірка: чи дата в майбутньому
+    if (selectedDate <= new Date()) {
+      iziToast.error({
+      title: 'Error',
+        message: 'Please choose a date in the future',
+        position: 'topRight'
+      });      
       refs.startBtn.disabled = true;
-      return;
+    } else {
+      userSelectedDate = selectedDate;
+      refs.startBtn.disabled = false; // Увімкнути кнопку, якщо дата вірна
     }
-    userSelectedDate = selectedDates[0]; 
-    interval = Number(selectedDates[0] - today); 
-    console.log(interval);
   },
 };
 
+flatpickr("#datetime-picker", options);
 
-refs.startBtn.addEventListener("click", setStartTimer);
-  
-  
-  const setStartTimer = () => {
+refs.startBtn.addEventListener("click", () => {
+  // Вимикаємо кнопку після старту
   refs.startBtn.disabled = true;
+  // Також варто вимкнути інпут, щоб не змінили дату під час відліку
+  document.querySelector("#datetime-picker").disabled = true;
 
-  // 1. Отримуємо об'єкт з розрахованими даними
-  const timeData = convertMs(interval); 
+  timerId = setInterval(() => {
+    const currentTime = Date.now();
+    const deltaTime = userSelectedDate - currentTime;
 
-  // 2. Прописуємо кожне значення у відповідний елемент інтерфейсу
-  refs.days.textContent = addLeadingZero(timeData.days);
-  refs.hours.textContent = addLeadingZero(timeData.hours);
-  refs.minutes.textContent = addLeadingZero(timeData.minutes);
-  refs.seconds.textContent = addLeadingZero(timeData.seconds);
-};
+    // Якщо час вийшов, зупиняємо таймер
+    if (deltaTime <= 0) {
+      clearInterval(timerId);
+      updateTimerInterface({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+      document.querySelector("#datetime-picker").disabled = false;
+      return;
+    }
 
-// Допоміжна функція для форматування (01 замість 1)
-function addLeadingZero(value) {
-  return String(value).padStart(2, '0');
+    // Конвертуємо мілісекунди в об'єкт часу
+    const time = convertMs(deltaTime);
+    
+    // Оновлюємо інтерфейс
+    updateTimerInterface(time);
+  }, 1000);
+});
+
+function updateTimerInterface({ days, hours, minutes, seconds }) {
+  refs.days.textContent = addLeadingZero(days);
+  refs.hours.textContent = addLeadingZero(hours);
+  refs.minutes.textContent = addLeadingZero(minutes);
+  refs.seconds.textContent = addLeadingZero(seconds);
 }
 
-flatpickr("#datetime-picker", options);
+// Додає 0 перед числом, якщо воно менше 10 (наприклад, 09)
+function addLeadingZero(value) {
+  return String(value).padStart(2, "0");
+}

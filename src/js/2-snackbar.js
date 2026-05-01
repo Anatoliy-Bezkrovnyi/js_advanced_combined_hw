@@ -1,33 +1,43 @@
 "use strict";
 
-const formData = { email: "", message: "" };
-const form = document.querySelector(".feedback-form");
-const email = form.elements.email;
-const textarea = form.elements.message;
-const localStorageKey = "feedback-form-state";
+import iziToast from "izitoast";
+import "izitoast/dist/css/iziToast.min.css";
 
-const savedData = localStorage.getItem(localStorageKey);
-if (savedData) {
-    try {
-        email.value = JSON.parse(savedData).email;
-        textarea.value = JSON.parse(savedData).message;
-    } catch (error) {
-        console.log(error);
-    }  
-}
+const form = document.querySelector('.form');
 
-form.addEventListener("input", () => {
-    formData.email = email.value.trim();
-    formData.message = textarea.value.trim();
-    localStorage.setItem(localStorageKey, JSON.stringify(formData));
+form.addEventListener('submit', (event) => {
+  event.preventDefault(); // Stop the page from reloading
+
+  const formData = new FormData(event.currentTarget);
+  
+  // Get the value by the "name" attribute
+  const delay = formData.get('delay');
+  const state = formData.get('state');
+
+    console.log(`Delay: ${delay}, State: ${state}`);
+    
+    const promise = new Promise((resolve, reject) => {
+  setTimeout(() => {
+    if (state === 'fulfilled') {
+      resolve(`✅ Fulfilled promise in ${delay}ms`);
+    } else {
+      reject(`❌ Rejected promise in ${delay}ms`);
+    }
+  }, delay);
 });
 
-form.addEventListener("submit", (evt) => {
-    evt.preventDefault();
-    if (evt.target.elements.email.value === "" || evt.target.elements.message.value === "") {
-        return alert("Всі поля повинні бути заповнені!");
-    }    
-	console.log(formData);
-  localStorage.removeItem(localStorageKey);
-  form.reset();
+// Registering promise callbacks
+promise
+    .then(value => iziToast.success({
+        message: (value),
+        position: 'topRight'
+    })) // "Success! Value passed to resolve function"
+    .catch(error => iziToast.error({
+        message: (error),
+        position: 'topRight'
+    }));// "Error! Error passed to reject function"
 });
+
+// Create promise
+
+  
